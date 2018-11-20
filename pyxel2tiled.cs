@@ -15,16 +15,16 @@ class Program
             switch(rot)
             {
                 case 0:
-                    flipState |= 0x80000000;       // horizontal
+                    flipState = 0x80000000;       // horizontal
                     break;
                 case 1:
-                    flipState |= 0xE0000000;       // horizontal + vertical + diagonal
+                    flipState = 0xE0000000;       // horizontal + vertical + diagonal
                     break;
                 case 2:
-                    flipState |= 0x40000000;       // vertical
+                    flipState = 0x40000000;       // vertical
                     break;
                 case 3:
-                    flipState |= 0x20000000;       // diagonal
+                    flipState = 0x20000000;       // diagonal
                     break;
             }
         }
@@ -35,16 +35,17 @@ class Program
                 case 0:                            // no change
                     break;
                 case 1:
-                    flipState |= 0xA0000000;       // horizontal + diagonal
+                    flipState = 0xA0000000;       // horizontal + diagonal
                     break;
                 case 2:
-                    flipState |= 0xC0000000;       // horizontal + vertical
+                    flipState = 0xC0000000;       // horizontal + vertical
                     break;
                 case 3:
-                    flipState |= 0x60000000;       // vertical + diagonal
+                    flipState = 0x60000000;       // vertical + diagonal
                     break;
             }
         }
+        tileId++;
         tileId |= flipState;
         return BitConverter.GetBytes(tileId);
     }
@@ -181,7 +182,7 @@ class Program
                             }
                         }
                         
-                        fixedTileId = AdjustTileId(tileId+1, rotation, flipX);                  // firstgid is 1
+                        fixedTileId = AdjustTileId(tileId, rotation, flipX);                  // firstgid is 1
                         Buffer.BlockCopy(fixedTileId, 0, currentLayer.TileData, (int)currentTile * 4, 4);  // add tileid to tiledata
                         
                         if(currentTile == (tileCount -1))
