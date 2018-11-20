@@ -204,6 +204,7 @@ class Program
         {
             tiledTMX.WriteStartDocument();
             tiledTMX.WriteStartElement("map");
+            tiledTMX.WriteAttributeString("version", "1.1");
             tiledTMX.WriteAttributeString("width", mapWidth.ToString());
             tiledTMX.WriteAttributeString("height", mapHeight.ToString());
             tiledTMX.WriteAttributeString("tilewidth", tileWidth.ToString());
@@ -226,6 +227,7 @@ class Program
                 tiledTMX.WriteStartElement("layer");
                 tiledTMX.WriteAttributeString("width", mapWidth.ToString());
                 tiledTMX.WriteAttributeString("height", mapHeight.ToString());
+                tiledTMX.WriteAttributeString("id", layerList[i].Id.ToString());
                 tiledTMX.WriteAttributeString("name", layerList[i].Name);
                 tiledTMX.WriteStartElement("data");
                 tiledTMX.WriteAttributeString("encoding", "base64");
@@ -239,8 +241,4 @@ class Program
         Console.WriteLine("{0} successfully converted to {1}!", args[0], tmxName);
         return 0;
     }
-    
 }
-
-
-
