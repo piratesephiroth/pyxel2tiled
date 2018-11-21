@@ -61,6 +61,18 @@ class Program
         }
     }
 
+    static byte[] ReverseArray(byte[] array)
+    {
+        for (int i = 0; i < array.Length / 2; i++)
+        {
+           byte tmp = array[i];
+           array[i] = array[array.Length - i - 1];
+           array[array.Length - i - 1] = tmp;
+        }
+        return array;
+    }
+
+
     public struct Layer
     {
         public uint Id;
@@ -88,7 +100,7 @@ class Program
         uint mapWidth = 0;
         uint tileHeight = 0;
         uint tileWidth = 0;
-        uint tileCount = 0;
+        uint mapTileCount = 0;
         uint currentTile = 0;
         uint tileId = 0;
         uint rotation = 0;
@@ -98,6 +110,7 @@ class Program
         Layer currentLayer = new Layer();
         List<Layer> layerList = new List<Layer>();
         
+        //read xml
         using (XmlReader pyxelXML = XmlReader.Create(args[0]))
         {
             while (pyxelXML.Read())
@@ -130,8 +143,8 @@ class Program
                                     break;
                             }
                         }
-                        tileCount = mapWidth * mapHeight;
-                        currentLayer.TileData = new byte [tileCount * 4];                       // set tiledata size
+                        mapTileCount = mapWidth * mapHeight;
+                        currentLayer.TileData = new byte [mapTileCount * 4];                       // set tiledata size
                     }
                     
                     if(pyxelXML.Name == "layer")
@@ -147,7 +160,7 @@ class Program
                             switch(pyxelXML.Name)
                             {
                                 case "number":
-                                    currentLayer.Id = UInt32.Parse(pyxelXML.Value);
+                                    currentLayer.Id = UInt32.Parse(pyxelXML.Value) + 1;
                                     break;
                                 
                                 case "name":
@@ -185,7 +198,7 @@ class Program
                         fixedTileId = AdjustTileId(tileId, rotation, flipX);                  // firstgid is 1
                         Buffer.BlockCopy(fixedTileId, 0, currentLayer.TileData, (int)currentTile * 4, 4);  // add tileid to tiledata
                         
-                        if(currentTile == (tileCount -1))
+                        if(currentTile == (mapTileCount -1))
                         {
                             currentTile = 0;                                        // reinitialize for another possible layer
                             currentLayer.CompressedTileData = Compress(currentLayer.TileData);
@@ -199,6 +212,48 @@ class Program
             }
         }
 
+        // get png dimensions
+        string pngName = Path.ChangeExtension(args[0], ".png");
+        byte[] magicBytes = new byte[]{ 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+        bool isPng = true;
+        uint pngWidth = 0;
+        uint pngHeight = 0;
+        uint tileCount = 0;
+        
+        if(File.Exists(pngName))
+        {
+            using (BinaryReader binaryReader = new BinaryReader(File.OpenRead(pngName)))
+            {
+                byte[] test = binaryReader.ReadBytes(8);
+                
+                for(int i = 0; i < 8; i++)
+                {
+                    if(test[i] != magicBytes[i])
+                    {
+                        Console.WriteLine("{0} exists but it's not a PNG image.", pngName);
+                        Console.WriteLine("Open and save the tmx in Tiled to add the missing tilemap info.", pngName);
+                        isPng = false;
+                        break;
+                    }
+                }
+                
+                if(isPng)
+                {
+                    binaryReader.ReadBytes(8);          // skip 8 bytes ahead
+                    pngWidth = BitConverter.ToUInt32(ReverseArray(binaryReader.ReadBytes(4)), 0);
+                    pngHeight = BitConverter.ToUInt32(ReverseArray(binaryReader.ReadBytes(4)), 0);
+                    Console.WriteLine("png width: {0}, png height: {1}", pngWidth, pngHeight);
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine("{0} not found.", pngName);
+            Console.WriteLine("Open and save the tmx in Tiled to add the missing tilemap info.", pngName);
+            isPng = false;
+        }
+
+        // write tmx
         XmlWriterSettings settings = new XmlWriterSettings();
         settings.Indent = true;
         using (XmlWriter tiledTMX = XmlWriter.Create(tmxName, settings))
@@ -217,9 +272,19 @@ class Program
             tiledTMX.WriteAttributeString("name","Converted by pyxel2tiled");
             tiledTMX.WriteAttributeString("tilewidth",tileWidth.ToString());
             tiledTMX.WriteAttributeString("tileheight",tileHeight.ToString());
+            if(isPng)
+            {
+                tileCount = (pngWidth / tileWidth) * (pngHeight / tileHeight);
+                tiledTMX.WriteAttributeString("tilecount",tileCount.ToString());///////////////////////////////////////////////////////
+            }
                 
             tiledTMX.WriteStartElement("image");
             tiledTMX.WriteAttributeString("source",Path.GetFileNameWithoutExtension(args[0]) + ".png");
+            if(isPng)
+            {
+                tiledTMX.WriteAttributeString("width", pngWidth.ToString());
+                tiledTMX.WriteAttributeString("height", pngHeight.ToString());
+            }
             tiledTMX.WriteEndElement();                     // close "image"
             tiledTMX.WriteEndElement();                     // close "tileset"
             
