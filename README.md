@@ -1,5 +1,5 @@
 # pyxel2tiled
-Convert xml tilemaps exported by Pyxel Edit to Tiled tmx.
+Converts xml tilemaps exported by Pyxel Edit to Tiled tmx.
 
 It expects a png tileset with the same name as the xml tilemap.
 
